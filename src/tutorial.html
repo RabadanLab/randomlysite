@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <title>Randomly</title>
+  <meta name="description" content="">
+  <meta name="author" content="">
+
+  <!-- Mobile Specific Metas
+  –––––––––––––––––––––––––––––––––––––––––––––––––– -->
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="css/normalize.css">
+  <link rel="stylesheet" href="css/skeleton.css">
+  <link href="https://fonts.googleapis.com/css?family=Raleway:400,300,600" rel="stylesheet" type="text/css">
+  <link href="https://fonts.googleapis.com/css?family=Lora:400,400i,700" rel="stylesheet">
+</head>
+
+<body>
+  <div class="container">
+    <div class="row" style="margin-top: 5%">
+
+      <div class="four columns">
+        <h1><a href="index.html" style="font-weight: bold; text-decoration:none; color:black">Randomly</a></h1>
+        <a href="index.html">
+        <center>
+        <img alt="Randomly" class="logo-width" src="https://s3.amazonaws.com/randomly-static/img/Randomly.png">
+        </center>
+        </a>
+        <a class="button u-full-width" href="#install">Installing Randomly</a>
+        <a class="button u-full-width" href="#loadingthedata">Loading the Data</a>
+        <a class="button u-full-width" href="#initializationandpreprocessing">Initialization and Preprocessing</a>
+        <a class="button u-full-width" href="#modelthedatausingrandommatrixtheory">Modeling the Data</a>
+        <a class="button u-full-width" href="#visualizeyourdenoisedsystem">Visualizing your Denoised System</a>
+        <a class="button u-full-width" href="#visualizegenes">Visualizing the Genes</a>
+        <a class="button u-full-width" href="#tipsandtricks">Tips and Tricks</a>
+        <a class="button u-full-width" href="#refs">References</a>
+        <a class="button u-full-width" href="https://github.com/RabadanLab/randomly">
+          <span>Github</span>
+          <img alt="Randomly on Github" src="https://s3.amazonaws.com/randomly-static/img/github-mark.svg" style="width:25px"/>
+        </a>
+        <a class="button u-full-width" href="index.html">Home</a>
+        <div class="row" style="padding-bottom: 5%"> </div>
+        <div class="row" style="padding-bottom: 5%"> </div>
+      </div>
+
+      <div class="eight columns">
+
+        <h2 id="install">Installing Randomly</h2>
+        <ul>
+        <li>Randomly only works with Python 3 (not Python 2), so be sure that your notebook is using a Python 3 kernel. The easiest way to install randomly is via the command line with pip:</li>
+        </ul>
+        <pre><code class="python language-python">$ pip install randomly</code></pre>
+        <ul>
+        <li>Now we can import the package in our python notebook:</li>
+        </ul>
+        <pre><code class="python language-python">&gt;&gt;&gt; import randomly</code></pre>
+        <h2 id="loadingthedata">Loading the Data</h2>
+        <ul>
+        <li>As an example, we are going to use a dataset of 1459 human pancreas cells from Baron<sup><a href="#footnote1">1</a></sup>.</li>
+        <li>Click <a href="http://randomly-example-data.s3-website-us-east-1.amazonaws.com/example.txt.zip">here</a> to download this sample data set.</li>
+        <li>Unzip the file.</li>
+        <li>To load our data, we use Pandas:</li>
+        </ul>
+        <pre><code class="python language-python">&gt;&gt;&gt; import pandas as pd
+&gt;&gt;&gt; df=pd.read_table('example.txt', index_col=0)</code></pre>
+        <ul>
+        <li>The input should be a table with cells in rows and genes in columns:</li>
+        </ul>
+        <pre><code class="python language-python">&gt;&gt;&gt; df.shape
+(1459, 17287)</code></pre>
+        <h2 id="initializationandpreprocessing">Initialization and Preprocessing</h2>
+        <h3 id="initializationofthemodel">Initialization of the model</h3>
+        <ul>
+        <li>Each time that we want to start or re-start the analysis we have to run: </li>
+        </ul>
+        <pre><code class="python language-python">&gt;&gt;&gt; model = randomly.Rm()</code></pre>
+        <h3 id="preprocessingthedata">Preprocessing the data</h3>
+        <ul>
+        <li>This function removes non-desired cells and genes:<br /><ol>
+        <li>We remove all the genes and cells that have less than <code>min_tp</code>  transcripts expressed.</li>
+        <li>We remove cells that express less than <code>min_genes_per_cell</code> genes.</li>
+        <li>We remove genes that are expressed in less than <code>min_cells_per_cell</code> cells.</li></ol></li>
+        </ul>
+        <pre><code class="python language-python">&gt;&gt;&gt; model.preprocess(df, min_tp=0, 
+                            min_genes_per_cell=0, 
+                            min_cells_per_gene=0,
+                        refined=True)
+Cell names are not unique. Cell names are reset
+Run the refining function</code></pre>
+        <h5 id="advancedpreprocessing">Advanced preprocessing</h5>
+        <ul>
+        <li>If you want to use the advanced feature <code>refined=True</code> (as we have done before) then, as function indicates, you have to run the function <code>model.refining()</code> afterwards:</li>
+        </ul>
+        <pre><code class="python language-python">&gt;&gt;&gt; model.refining(min_trans_per_gene=7)
+1459  cells and  11389  genes</code></pre>
+        <ul>
+        <li>This function removes sparsity in a more efficient way. </li>
+        <li>The parameter <code>min_trans_per_gene</code> defines a cut-off on genes. In this example, <code>min_trans_per_gene</code> equals 7. This parameter should be choosen such that the total number of remaining genes is bigger than at least 8000. In this example, we leave 11389 genes.</li>
+        </ul>
+        <h2 id="modelthedatausingrandommatrixtheory">Modeling the data using Random Matrix Theory</h2>
+        <pre><code class="python language-python">&gt;&gt;&gt; model.fit()
+Preprocessed data is being used for fitting</code></pre>
+        <h3 id="plotofmarchenkopasturdistribution">Plot of Marchenko-Pastur distribution</h3>
+        <pre><code class="python language-python">&gt;&gt;&gt; model.plot_mp()</code></pre>
+        <p><img style="width: 100%;" src="https://s3.amazonaws.com/randomly-static/docs/img/output_23_0.png" alt="png" /></p>
+        <h5 id="savetheplots">Save the plots</h5>
+        <p>If you want to save the plots generated by any of the Randomly functions, you can do it by adding the option <code>path=folder/name.extension</code>, where extension could be: pdf, png, jpg, etc. For example:</p>
+        <pre><code class="python language-python">&gt;&gt;&gt; model.plot_mp(path='Data/my_marchenko.pdf')</code></pre>
+        <h3 id="plotthestatsticsofsignallikegenes">Plot the statstics of signal-like genes</h3>
+        <pre><code class="python language-python">&gt;&gt;&gt; model.plot_statistics()</code></pre>
+        <p><img style="width: 100%;" src="https://s3.amazonaws.com/randomly-static/docs/img/output_28_0.png" alt="png" /></p>
+        <h3 id="getthedenoiseddata">Get the denoised data</h3>
+        <ul>
+        <li>You can use the false discovery rate ("fdr") shown in the previous plot to select the genes which are responsible for the signal. In this case, fdr=0.0001 corresponds to 2590 genes:</li>
+        </ul>
+        <pre><code class="python language-python">&gt;&gt;&gt; df2 = model.return_cleaned(fdr=0.0001)
+&gt;&gt;&gt; df2.shape
+(1459, 2590)</code></pre>
+        <ul>
+        <li>Alternatively, you can use the Normalized sample variance (<code>sample_variance</code>) shown in the y-axis of the previous plot. For instance, this allows you to select the top 1100 most signal-like genes. In this case, by selecting <code>sample_variance</code> equals 350, we get 1101 genes:</li>
+        </ul>
+        <pre><code class="python language-python">&gt;&gt;&gt; df2 = model.return_cleaned(sample_variance=350)
+&gt;&gt;&gt; df2.shape
+(1459, 1101)</code></pre>
+        <h5 id="savethedenoiseddata">Save the denoised data</h5>
+        <p>If you want to save the denoised dataset in your computer, you can do it by adding the option <code>path=folder/name.txt</code>. For example:</p>
+        <pre><code class="python language-python">&gt;&gt;&gt; df2 = model.return_cleaned(sample_variance=350, path='Data/my_denoised_data.txt')</code></pre>
+        <h2 id="visualizeyourdenoisedsystem">Visualizing your Denoised System</h2>
+        <h3 id="tsneplotforvisualization">t-SNE plot for visualization</h3>
+        <p>Once you know the signal-like genes you want to use based on the previous step, Randomly allows you to visualize it using t-SNE:</p>
+        <pre><code class="python language-python">&gt;&gt;&gt; model.fit_tsne(sample_variance=350)
+computing t-SNE, using Multicore t-SNE for 4 jobs
+atribute embedding is updated with t-SNE coordinates
+&gt;&gt;&gt; model.plot()</code></pre>
+        <p><img style="width: 65%;" src="https://s3.amazonaws.com/randomly-static/docs/img/output_43_0.png" alt="png" /></p>
+        <h3 id="hierarchicalclustering">Hierarchical clustering</h3>
+        <ul>
+        <li>Randomly has a function to perform unsupervised hierarchical clustering in the denoised data: </li>
+        </ul>
+        <pre><code class="python language-python">&gt;&gt;&gt; model.fit_hierarchical()</code></pre>
+        <ul>
+        <li>By adjusting the threshold <code>thrs</code>, you can select the clusters:</li>
+        </ul>
+        <pre><code class="python language-python">&gt;&gt;&gt; model.visual_hierarchy(thrs=100, value_range=2)</code></pre>
+        <p><img style="width: 100%;" src="https://s3.amazonaws.com/randomly-static/docs/img/output_48_0.png" alt="png" /></p>
+        <ul>
+        <li>And visualize these clusters in the t-SNE:</li>
+        </ul>
+        <pre><code class="python language-python">&gt;&gt;&gt; model.plot(labels=model.labels_hierarchy, legend=True)</code></pre>
+        <p><img style="width: 65%;" src="https://s3.amazonaws.com/randomly-static/docs/img/output_50_0.png" alt="png" /></p>
+        <h3 id="kmeansclustering">K-means clustering</h3>
+        <ul>
+        <li>Randomly also has a function to perform k-means clustering. The parameter <code>n_clusters</code> selects the number of clusters:</li>
+        </ul>
+        <pre><code class="python language-python">&gt;&gt;&gt; model.fit_kmeans(n_clusters=16)</code></pre>
+        <ul>
+        <li>You can visualize the k-means result in the t-SNE:</li>
+        </ul>
+        <pre><code class="python language-python">&gt;&gt;&gt; model.plot(labels=model.labels_kmeans)</code></pre>
+        <p><img style="width: 65%;" src="https://s3.amazonaws.com/randomly-static/docs/img/output_55_0.png" alt="png" /></p>
+        <h3 id="geneexpressionprofileacrosstheclusters">Gene expression profile across the clusters</h3>
+        <ul>
+        <li>Randomly has a function <code>model.get_gene_info()</code> that allows you to analyze your clusters to get biological insight. </li>
+        <li>The function <code>model.get_gene_info()</code> gives the expression profile of a gene or a list of genes across the different clusters. It does this by performing a violin plot and a ridge plot.</li>
+        <li>The colors correspond to the label colors of the clustering methods (hierarchical or k-means) previously described.</li>
+        <li>In following example, we will use the clusters obtained in the hierarchical clustering, using <code>labels=model.labels_hierarchy</code>, to visualize the gene 'INS':</li>
+        </ul>
+        <pre><code class="python language-python">&gt;&gt;&gt; model.get_gene_info(labels=model.labels_hierarchy, gene=['INS'], size=8)</code></pre>
+        <p><img style="width: 100%;" src="https://s3.amazonaws.com/randomly-static/docs/img/output_58_0.png" alt="png" /></p>
+        <p><img style="width: 100%;" src="https://s3.amazonaws.com/randomly-static/docs/img/output_58_1.png" alt="png" /></p>
+        <p>If several genes are used, for example <code>gene=['INS', 'PPY', 'PDFGRA']</code>, then the function gives the average of  the genes in the list.</p>
+        <h2 id="visualizegenes">Visualizing the Genes</h2>
+        <ul>
+        <li>Randomly has a function to visualize the gene expression in the t-SNE:</li>
+        </ul>
+        <pre><code class="python language-python">&gt;&gt;&gt; model.plot(gene=['PPY'], size=4)</code></pre>
+        <p><img style="width: 65%;" src="https://s3.amazonaws.com/randomly-static/docs/img/output_62_0.png" alt="png" /></p>
+        <p>or the average of a set of genes:</p>
+        <pre><code class="python language-python">&gt;&gt;&gt; model.plot(gene=['DDIT3','HSPA5','HERPUD1'], size=4)</code></pre>
+        <p><img style="width: 65%;" src="https://s3.amazonaws.com/randomly-static/docs/img/output_64_0.png" alt="png" /></p>
+        <ul>
+        <li>The same function allows you to visualize a list of individual genes: </li>
+        </ul>
+        <pre><code class="python language-python">&gt;&gt;&gt; model.plot(gene=('PPY','GCG','SST','INS','GHRL','CPA1','KRT19'
+                                    ,'RGS5','PDGFRA','VWF','SDS','SOX10'))</code></pre>
+        <p><img style="width: 100%;" src="https://s3.amazonaws.com/randomly-static/docs/img/output_66_0.png" alt="png" /></p>
+        <h2 id="tipsandtricks">Tips and Tricks</h2>
+        <h4 id="getinformationabouttheclustering">Get information about the clustering</h4>
+        <p>The function <code>model.get_cluster_info()</code> gives information about the clusters produced by the methods described previously:
+          <ol>
+            <li>The number of cells.</li>
+            <li>The 10 (by default) most expressed genes. By using <code>genes = number</code> we can increase the list. For example, <code>genes = 20</code> will give the top 20 genes.</li>
+            <li>The function visualizes the genes in the t-SNE.</li>
+          </ol>
+        Here is an example with cluster 1 from the hierarchical clustering we have done before:</p>
+        <pre><code class="python language-python">&gt;&gt;&gt; model.get_cluster_info(labels=model.labels_hierarchy, cluster=1)
+The cluster 1 has 49 cells</code></pre>
+        <p><img style="width: 65%;" src="https://s3.amazonaws.com/randomly-static/docs/img/output_70_1.png" alt="png" /></p>
+        <pre><code>The top 10 highly expressed signal-like genes in this cluster are:
+        PPY
+        EEF1A1
+        GNAS
+        FTL
+        PCSK1N
+        CHGB
+        SST
+        CLU
+        SCG2
+        MALAT1</code></pre>
+        <p><img style="width: 100%;" src="https://s3.amazonaws.com/randomly-static/docs/img/output_70_3.png" alt="png" /></p>
+        <h4 id="plotthelibrarycomplexityoftheoriginaldataset">Plot the library complexity of the original dataset</h4>
+        <pre><code class="python language-python">&gt;&gt;&gt; model.plot(gene=['library'], size=4)</code></pre>
+        <p><img style="width: 65%;" src="https://s3.amazonaws.com/randomly-static/docs/img/output_72_0.png" alt="png" /></p>
+        <h4 id="addalegendandmore">Add a legend and more</h4>
+        <ul>
+        <li>You can add a legend to t-SNE plots to identify your cell populations and subpopulations after your analysis.</li>
+        <li>To identify the order of the color code, it is useful to start using <code>legend=True</code>. We already did this when we performed the hierarchical clustering.</li>
+        <li>Once you know  the color code, then add the legend list <code>legend=[list of your names]</code>. For example:</li>
+        </ul>
+        <pre><code class="python language-python">&gt;&gt;&gt; my_legend=['Gamma', 'Ductal (CFTR+)', 'Beta', 'Activ.stellate', 'Acinar', 'Stellate (TIMP1+ &amp; CD44+)', 
+                    'Quiesc. stellate', 'Ductal (MUC1+ &amp; TFF1+)', 'Macrofage', 'Ductal (CD44+ &amp; CFTR- )', 
+                    'Beta stressed', 'Alpha', 'Endothelial', 'Delta']
+        
+&gt;&gt;&gt; model.plot(labels=model.labels_hierarchy, legend=my_legend, legendcol=3, size=6, points=7)</code></pre>
+        <p><img style="width: 65%;" src="https://s3.amazonaws.com/randomly-static/docs/img/output_75_0.png" alt="png" /></p>
+        <ul>
+        <li><code>legendcol</code> sets how many columns you want to plot in the legend.</li>
+        <li><code>size</code> sets the size of the plot.</li>
+        <li><code>points</code> sets the size of the points.</li>
+        </ul>
+        <p>You can use the same legend for the <code>get_gene_info()</code> function and get publication-ready plots. For example:</p>
+        <pre><code class="python language-python">&gt;&gt;&gt; model.get_gene_info(labels=model.labels_hierarchy, gene=['INS'], size=8, legend=my_legend)</code></pre>
+        <h4 id="macoswithretinascreen">MAC OS with retina screen</h4>
+        <p>If you are using a MAC OS with retina display, to increase the quality of your plots you should use this option at the beginning of your script:</p>
+        <pre><code class="python language-python">&gt;&gt;&gt; %config InlineBackend.figure_format = 'retina'</code></pre>
+        <h4 id="differentpreproc">Using a Different Preprocessing or Normalization</h4>
+        <p>
+        If you want to do custom preprocessing—for example, you don't want to use TPMs (transcripts per million); or you want to select your own genes or your own cells in a different way—you can avoid the preprocessing step and safely jump to <a href="#modelthedatausingrandommatrixtheory">The Modeling Section</a> above, using:
+        <pre><code class="python language-python">&gt;&gt;&gt; model.fit(df = df)</code></pre>
+        </p>
+        <h2 id="refs">References</h2>
+        <ol>
+          <li id="footnote1">Baron, M. et al. A single-cell transcriptomic map of the human and mouse pancreas reveals inter- and intra-cell population structure. <i>Cell Syst.</i> <b>3</b>, 346–360.e4 (2016)</li>
+        </ol>
+
+      </div> <!-- cols -->
+
+    </div> <!-- row -->
+
+    <div class="row" style="padding-bottom: 25%">
+      <a href="https://rabadan.c2b2.columbia.edu/">Rabadan Lab</a> &copy; 2018
+    </div>
+  </div> <!-- container -->
+</body>
+
+</html>
+

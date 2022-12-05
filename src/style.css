@@ -1,0 +1,71 @@
+.hello {
+  color: red;
+}
+
+.imgstyle1 {
+  width: 100%;
+  /* border: 1px solid #ddd; */
+}
+
+#chart {
+  /*
+  position: fixed;
+  left: 0px;
+  right: 0px;
+  top: 0px;
+  bottom: 0px;
+  z-index: -1;
+  */
+  background-color: white;
+  height: 400px;
+  /*
+  background-color: pink;
+  height: 200px;
+  width: 200px;
+  */
+}
+
+#menu {
+  /* position: fixed; */
+  left: 20px;
+  top: 20px;
+  z-index: 1;
+  border: 1px black;
+  border-radius: 5px;
+  background-color: white;
+}
+
+.slider {
+  width: 300px;
+  margin-left: 10px;
+}
+
+body {
+  font-family: sans-serif
+}
+
+svg {
+  outline: 1px solid lightgray;
+}
+
+.noUi-handle {
+  width: 10px !important;
+  right: -5px !important;
+  top: -9px !important;
+}
+
+.noUi-handle::before {
+  left: 5px !important;
+}
+
+.noUi-handle::after {
+  left: 2px !important;
+}
+
+.noUi-horizontal {
+  height: 12px !important;
+}
+
+.centerme {
+  text-align: center;
+}
